@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Maturity Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .card { background: #f4f4f4; padding: 15px; border-radius: 8px; width: 30%; text-align: center; }
+        h1 { text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Debt Maturity Analysis Dashboard</h1>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Total Debt</h2>
+            <p>{{ total_debt }}</p>
+        </div>
+        <div class="card">
+            <h2>Inflation Rate</h2>
+            <p>{{ inflation_rate }}</p>
+        </div>
+        <div class="card">
+            <h2>Earnings Quality</h2>
+            <p>{{ earnings_quality }}</p>
+        </div>
+    </div>
+    
+</body>
+</html>
