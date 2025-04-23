@@ -4,38 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Debt Maturity Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         body {
             font-family: Arial, sans-serif;
             background: #f4f4f4;
             color: #333;
-            padding: 20px;
         }
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
+        .navbar {
+            background: #007bff;
         }
-        .dashboard {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
+        .navbar .navbar-brand {
+            font-weight: bold;
+            color: white;
         }
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
-            width: 300px;
-            text-align: center;
+        .navbar .nav-link {
+            color: white;
+        }
+        .navbar .nav-link:hover {
+            text-decoration: underline;
         }
         .card h2 {
-            margin-bottom: 10px;
             color: #007bff;
         }
         .footer {
@@ -46,30 +41,202 @@
             color: #fff;
             border-radius: 4px;
         }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .badge {
+            padding: 6px 10px;
+            font-size: 90%;
+            border-radius: 4px;
+        }
+
     </style>
 </head>
 <body>
 
-    <h1>Debt Maturity Analysis Dashboard</h1>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Debt Maturity</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
 
-    <div class="dashboard">
-        <div class="card">
-            <h2>Total Debt</h2>
-            <p>{{ total_debt }}</p>
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Debt Maturity Analysis Dashboard</h1>
+
+    <!-- Dropdown for company filter -->
+    <form method="get" class="text-center mb-4">
+        <label for="company" class="form-label me-2">Company:</label>
+        <select name="company" id="company" class="form-select w-auto d-inline-block me-3" onchange="this.form.submit()">
+            <option value="">All Companies</option>
+            {% for company in companies %}
+            <option value="{{ company }}" {% if company == selected_company %}selected{% endif %}>{{ company }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="year" class="form-label me-2">Year:</label>
+        <select name="year" id="year" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
+            <option value="">All Years</option>
+            {% for year in years %}
+            <option value="{{ year }}" {% if year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    
+
+    <!-- Dashboard Cards -->
+    <div class="row g-4">
+        <div class="col-12 col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2>Total Debt</h2>
+                    <p>{{ total_debt }}</p>
+                </div>
+            </div>
         </div>
-        <div class="card">
-            <h2>Inflation Rate</h2>
-            <p>{{ inflation_rate }}</p>
+        <div class="col-12 col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2>Inflation Rate</h2>
+                    <p>{{ inflation_rate }}</p>
+                </div>
+            </div>
         </div>
-        <div class="card">
-            <h2>Earnings Quality</h2>
-            <p>{{ earnings_quality }}</p>
+        <div class="col-12 col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2>Earnings Quality</h2>
+                    <p>{{ earnings_quality }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="footer">
-        <p>&copy; 2025 Debt Maturity Research. All rights reserved.</p>
+    <!-- Financial Data Table -->
+    <div class="table-responsive mt-4">
+        <table class="table table-bordered table-striped">
+            <thead class="table-primary">
+                <tr>
+                    <th>Company</th>
+                    <th>Date</th>
+                    <th>Revenue(USD)</th>
+                    <th>Debt Short (USD)</th>
+                    <th>Debt Long (USD)</th>
+                    <th>Debt Ratio</th>
+                    <th>Audit Opinion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in financial_data %}
+                <tr>
+                    <td>{{ item.company_name }}</td>
+                    <td>{{ item.report_date }}</td>
+                    <td>{{ item.normalized_revenue|floatformat:2|default:"-" }}</td>
+                    <td>{{ item.normalized_debt_short_term|floatformat:2 }}</td>
+                    <td>{{ item.normalized_debt_long_term|floatformat:2 }}</td>
+                    <td>
+                        {% if item.debt_ratio %}
+                            {% if item.debt_ratio > 0.7 %}
+                                <span class="badge bg-danger">{{ item.debt_ratio|floatformat:2 }}</span>
+                            {% elif item.debt_ratio > 0.5 %}
+                                <span class="badge bg-warning text-dark">{{ item.debt_ratio|floatformat:2 }}</span>
+                            {% else %}
+                                <span class="badge bg-success">{{ item.debt_ratio|floatformat:2 }}</span>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    
+                    <td>{{ item.auditor_opinion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    <!-- Debt Comparison Chart -->
+    <div class="mt-5">
+        <h3 class="text-center mb-3">Short-Term vs Long-Term Debt</h3>
+        <canvas id="debtBarChart" height="100"></canvas>
+    </div>
+</div>
+
+<div class="footer">
+    <p>&copy; 2025 Debt Maturity Research. All rights reserved.</p>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Chart Script -->
+
+<script>
+    const debtData = JSON.parse('{{ debt_data_json|escapejs }}');
+
+    const labels = debtData.map(item => `${item.company_name} ${item.report_date.split('-')[0]}`);
+    const shortTermUSD = debtData.map(item => item.normalized_debt_short_term || 0);
+    const longTermUSD = debtData.map(item => item.normalized_debt_long_term || 0);
+
+    const ctx = document.getElementById('debtBarChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Short-Term Debt (USD)',
+                    data: shortTermUSD,
+                    backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                },
+                {
+                    label: 'Long-Term Debt (USD)',
+                    data: longTermUSD,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Normalized Debt Structure (USD)'
+                },
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Debt Value (USD)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Company (Year)'
+                    }
+                }
+            }
+        }
+    });
+</script>
+
 
 </body>
 </html>

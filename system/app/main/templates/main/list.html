@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Data</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h2>Extracted Financial Data</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Revenue</th>
+                <th>EBITDA</th>
+                <th>Net Profit</th>
+                <th>Assets</th>
+                <th>Equity</th>
+                <th>Liabilities</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r.filename }}</td>
+                <td>{{ r.revenue|default:"-" }}</td>
+                <td>{{ r.ebitda|default:"-" }}</td>
+                <td>{{ r.net_profit|default:"-" }}</td>
+                <td>{{ r.assets|default:"-" }}</td>
+                <td>{{ r.equity|default:"-" }}</td>
+                <td>{{ r.liabilities|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
