@@ -92,19 +92,45 @@
             <option value="{{ year }}" {% if year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year }}</option>
             {% endfor %}
         </select>
+
+        <label for="opinion" class="form-label me-2">Audit Opinion:</label>
+        <select name="opinion" id="opinion" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="problematic" {% if opinion_filter == "problematic" %}selected{% endif %}>
+                Qualified/Adverse Only
+            </option>
+        </select>
+
     </form>
     
 
     <!-- Dashboard Cards -->
     <div class="row g-4">
+
+
         <div class="col-12 col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2>Reporting Quality</h2>
+                    <p>
+                        {% if avg_opinion_score is not None %}
+                            {{ avg_opinion_score }}/3
+                        {% else %}
+                            Not Available
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- <div class="col-12 col-md-4">
             <div class="card text-center">
                 <div class="card-body">
                     <h2>Total Debt</h2>
                     <p>{{ total_debt }}</p>
                 </div>
             </div>
-        </div>
+        </div> -->
         <div class="col-12 col-md-4">
             <div class="card text-center">
                 <div class="card-body">
@@ -121,7 +147,33 @@
                 </div>
             </div>
         </div>
+
+        {% if correlation_result %}
+        <div class="col-12 col-md-12">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2>Debt vs Reporting Quality</h2>
+                    <p><strong>{{ correlation_method }} Correlation:</strong> {{ correlation_result.correlation }}</p>
+                    <p><strong>p-value:</strong> {{ correlation_result.p_value }}</p>
+                    <p class="mt-2">{{ correlation_comment }}</p>
+                </div>
+
+                
+            <div class="col-md-12 mt-5">
+                <h3 class="text-center mb-3">Debt Ratio vs Audit Opinion Score</h3>
+                <div class="chart-container" style="position: relative; height: 100%; width: 100%;">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+            </div>
+
+        </div>
+        {% endif %}
+
     </div>
+
+    
+    
 
     <!-- Financial Data Table -->
     <div class="table-responsive mt-4">
@@ -159,7 +211,22 @@
                         {% endif %}
                     </td>
                     
-                    <td>{{ item.auditor_opinion }}</td>
+                    <td>
+                        {% if item.auditor_opinion == "unqualified" %}
+                            <span class="badge bg-success">Unqualified</span>
+                        {% elif item.auditor_opinion == "qualified" %}
+                            <span class="badge bg-warning text-dark">Qualified</span>
+                        {% elif item.auditor_opinion == "disclaimer" %}
+                            <span class="badge bg-secondary">Disclaimer</span>
+                        {% elif item.auditor_opinion == "adverse" %}
+                            <span class="badge bg-danger">Adverse</span>
+                        {% elif item.auditor_opinion == "Adverse Conclusion" %}
+                            <span class="badge bg-danger">Adverse Conclusion</span>
+                        {% else %}
+                            <span class="badge bg-dark">Unknown</span>
+                        {% endif %}
+                      </td>
+                      
                 </tr>
                 {% endfor %}
             </tbody>
@@ -167,10 +234,28 @@
     </div>
 
     <!-- Debt Comparison Chart -->
-    <div class="mt-5">
-        <h3 class="text-center mb-3">Short-Term vs Long-Term Debt</h3>
-        <canvas id="debtBarChart" height="100"></canvas>
+    <div class="row">
+        <div class="col-md-6 mt-5">
+            <h3 class="text-center mb-3">Short-Term vs Long-Term Debt</h3>
+            <div class="chart-container" style="position: relative; height: 100%; width: 100%;">
+                <canvas id="debtBarChart"></canvas>
+            </div>
+        </div>
+    
+       
+    
+        <div class="col-md-6 mt-5">
+            <h3 class="text-center mb-3">Audit Opinion Distribution</h3>
+            <div class="chart-container" style="position: relative; height: 100%; width: 100%;">
+                <canvas id="opinionChart"></canvas>
+            </div>
+        </div>
     </div>
+    
+    
+    
+  
+    
 </div>
 
 <div class="footer">
@@ -231,6 +316,108 @@
                         display: true,
                         text: 'Company (Year)'
                     }
+                }
+            }
+        }
+    });
+</script>
+
+<script>
+    const scatterData = JSON.parse('{{ scatter_data_json|escapejs }}');
+
+    const ctx2 = document.getElementById('scatterChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Financial Statements',
+                data: scatterData.map(item => ({
+                    x: item.debt_ratio,
+                    y: item.opinion_score
+                })),
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Debt Ratio vs Reporting Quality (Opinion Score)'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const score = context.raw.y;
+                            const map = ["Unqualified", "Qualified", "Disclaimer", "Adverse"];
+                            return `Opinion: ${map[score] || score}, Debt Ratio: ${context.raw.x.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Debt Ratio'
+                    },
+                    min: 0,
+                    max: 1
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Opinion Score (0 = Best)'
+                    },
+                    ticks: {
+                        stepSize: 1,
+                        callback: value => ["unqualified", "qualified", "disclaimer", "adverse"][value] || value
+                    },
+                    min: 0,
+                    max: 3
+                }
+            }
+        }
+    });
+</script>
+
+
+<script>
+    const opinionCounts = JSON.parse('{{ opinion_counts_json|escapejs }}');
+    const opinionLabels = Object.keys(opinionCounts);
+    const opinionData = Object.values(opinionCounts);
+
+    const ctxOpinion = document.getElementById('opinionChart').getContext('2d');
+    new Chart(ctxOpinion, {
+        type: 'pie',
+        data: {
+            labels: opinionLabels,
+            datasets: [{
+                label: 'Audit Opinions',
+                data: opinionData,
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',   // Green
+                    'rgba(255, 193, 7, 0.7)',   // Yellow
+                    'rgba(108, 117, 125, 0.7)', // Gray
+                    'rgba(220, 53, 69, 0.7)',   // Red
+                    'rgba(255, 99, 132, 0.7)',  // Red (alt)
+                    'rgba(52, 58, 64, 0.7)'     // Dark
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Distribution of Auditor Opinions'
+                },
+                legend: {
+                    position: 'right'
                 }
             }
         }
