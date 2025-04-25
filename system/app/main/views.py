@@ -58,6 +58,49 @@ def financials_view(request):
     ))
     debt_data_json = json.dumps(debt_data, default=str)
 
+
+    # Revenue & Net Profit Trend Data
+    from collections import defaultdict
+
+    # Grouped Revenue & Net Profit by Year
+    trend_group = defaultdict(lambda: {"revenue": 0, "net_profit": 0, "count": 0})
+
+    for f in financial_data:
+        year = f.report_date.year
+        trend_group[year]["revenue"] += f.normalized_revenue or 0
+        trend_group[year]["net_profit"] += f.net_profit or 0
+        trend_group[year]["count"] += 1
+
+    # Averaging or total depending on what you want:
+    trend_data = []
+    for year, values in sorted(trend_group.items()):
+        trend_data.append({
+            "year": year,
+            "revenue": round(values["revenue"]),
+            "net_profit": round(values["net_profit"])
+        })
+
+    trend_data_json = json.dumps(trend_data)
+
+
+
+    # Debt-to-Equity Ratio data
+    de_ratio_data = []
+    for f in financial_data:
+        equity = f.total_equity or 0
+        debt = (f.debt_short_term or 0) + (f.debt_long_term or 0)
+        ratio = debt / equity if equity != 0 else None
+        de_ratio_data.append({
+            "company_name": f.company_name,
+            "report_date": f.report_date.strftime('%Y-%m-%d'),
+            "de_ratio": round(ratio, 2) if ratio is not None else None
+        })
+
+    de_ratio_data_json = json.dumps(de_ratio_data) if de_ratio_data else '[]'
+
+
+
+
     # 5. Correlation and scatter plot data
     correlation_comment = "Not enough data"
     correlation_result = None
@@ -125,6 +168,8 @@ def financials_view(request):
         "correlation_comment": correlation_comment,
         "correlation_method": correlation_method,
         "scatter_data_json": json.dumps(scatter_data),
+        "trend_data_json": trend_data_json,
+        "de_ratio_data_json": de_ratio_data_json,
     }
 
     return render(request, "main/index.html", context)

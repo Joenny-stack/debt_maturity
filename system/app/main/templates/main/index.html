@@ -4,62 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Debt Maturity Dashboard</title>
-    
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Chart.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            color: #333;
-        }
-        .navbar {
-            background: #007bff;
-        }
-        .navbar .navbar-brand {
-            font-weight: bold;
-            color: white;
-        }
-        .navbar .nav-link {
-            color: white;
-        }
-        .navbar .nav-link:hover {
-            text-decoration: underline;
-        }
-        .card h2 {
-            color: #007bff;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding: 10px;
-            background: #007bff;
-            color: #fff;
-            border-radius: 4px;
-        }
-        .table th, .table td {
-            vertical-align: middle;
-        }
-        .badge {
-            padding: 6px 10px;
-            font-size: 90%;
-            border-radius: 4px;
-        }
-
+        body { font-family: Arial, sans-serif; background: #f4f4f4; color: #333; }
+        .navbar { background: #007bff; }
+        .navbar .navbar-brand, .navbar .nav-link { color: white; }
+        .navbar .nav-link:hover { text-decoration: underline; }
+        .card h5, .card h4 { color: #007bff; }
+        .footer { text-align: center; margin-top: 30px; padding: 10px; background: #007bff; color: #fff; border-radius: 4px; }
+        .badge { padding: 6px 10px; font-size: 90%; border-radius: 4px; }
     </style>
 </head>
 <body>
-
-<!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Debt Maturity</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -71,50 +42,59 @@
         </div>
     </div>
 </nav>
-
 <div class="container mt-4">
-    <h1 class="text-center mb-4">Debt Maturity Analysis Dashboard</h1>
+    <h1 class="text-center mb-4">📊 Debt Maturity Analysis Dashboard</h1>
 
-    <!-- Dropdown for company filter -->
-    <form method="get" class="text-center mb-4">
-        <label for="company" class="form-label me-2">Company:</label>
-        <select name="company" id="company" class="form-select w-auto d-inline-block me-3" onchange="this.form.submit()">
-            <option value="">All Companies</option>
-            {% for company in companies %}
-            <option value="{{ company }}" {% if company == selected_company %}selected{% endif %}>{{ company }}</option>
-            {% endfor %}
-        </select>
-    
-        <label for="year" class="form-label me-2">Year:</label>
-        <select name="year" id="year" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-            <option value="">All Years</option>
-            {% for year in years %}
-            <option value="{{ year }}" {% if year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="opinion" class="form-label me-2">Audit Opinion:</label>
-        <select name="opinion" id="opinion" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-            <option value="">All</option>
-            <option value="problematic" {% if opinion_filter == "problematic" %}selected{% endif %}>
-                Qualified/Adverse Only
-            </option>
-        </select>
-
+    <!-- Filters -->
+    <form method="get" class="row justify-content-center g-2 mb-4">
+        <!-- Company -->
+        <div class="col-auto">
+            <label for="company" class="form-label">Company</label>
+            <select name="company" id="company" class="form-select" onchange="this.form.submit()">
+                <option value="">All</option>
+                {% for company in companies %}
+                    <option value="{{ company }}" {% if company == selected_company %}selected{% endif %}>{{ company }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Year -->
+        <div class="col-auto">
+            <label for="year" class="form-label">Year</label>
+            <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+                <option value="">All</option>
+                {% for year in years %}
+                    <option value="{{ year }}" {% if year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Opinion -->
+        <div class="col-auto">
+            <label for="opinion" class="form-label">Opinion</label>
+            <select name="opinion" id="opinion" class="form-select" onchange="this.form.submit()">
+                <option value="">All</option>
+                <option value="problematic" {% if opinion_filter == "problematic" %}selected{% endif %}>Qualified / Adverse Only</option>
+            </select>
+        </div>
     </form>
-    
 
-    <!-- Dashboard Cards -->
-    <div class="row g-4">
-
-
-        <div class="col-12 col-md-4">
-            <div class="card text-center">
+    <!-- KPI Cards -->
+    <!-- 🧮 KPI Cards with Icons & Badges -->
+    <div class="row g-3 mb-2">
+        <!-- Reporting Quality -->
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h2>Reporting Quality</h2>
-                    <p>
+                    <h5 class="card-title"><i class="fas fa-clipboard-check text-primary"></i> Reporting Quality</h5>
+                    <p class="fs-4">
                         {% if avg_opinion_score is not None %}
                             {{ avg_opinion_score }}/3
+                            {% if avg_opinion_score >= 2 %}
+                                <span class="badge bg-danger">⚠️ Poor</span>
+                            {% elif avg_opinion_score >= 1 %}
+                                <span class="badge bg-warning text-dark">🟡 Moderate</span>
+                            {% else %}
+                                <span class="badge bg-success">✅ Good</span>
+                            {% endif %}
                         {% else %}
                             Not Available
                         {% endif %}
@@ -123,144 +103,194 @@
             </div>
         </div>
 
-        <!-- <div class="col-12 col-md-4">
-            <div class="card text-center">
+
+
+        <!-- Inflation Rate -->
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h2>Total Debt</h2>
-                    <p>{{ total_debt }}</p>
-                </div>
-            </div>
-        </div> -->
-        <div class="col-12 col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2>Inflation Rate</h2>
-                    <p>{{ inflation_rate }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2>Earnings Quality</h2>
-                    <p>{{ earnings_quality }}</p>
+                    <h5 class="card-title"><i class="fas fa-balance-scale text-warning"></i> Debt Service Ratio</h5>
+                    <p class="fs-4">
+                        {{ inflation_rate }}
+                        <span class="badge bg-secondary">📊 Source: RBZ</span>
+                    </p>
                 </div>
             </div>
         </div>
 
-        {% if correlation_result %}
-        <div class="col-12 col-md-12">
-            <div class="card text-center">
+        <!-- Earnings Quality -->
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h2>Debt vs Reporting Quality</h2>
+                    <h5 class="card-title"><i class="fas fa-award text-success"></i> Earnings Quality</h5>
+                    <p class="fs-4">
+                        {{ earnings_quality }}
+                        <span class="badge bg-info text-dark">🧾 Unqualified</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ℹ️ Interpretation Panel -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-light shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> How to Interpret These KPIs</h5>
+                    <ul class="mb-1">
+                        <li><strong>Reporting Quality</strong>: Based on audit scores. <em>Lower is better</em>.</li>
+                        <li><strong>Debt Service Ratio</strong>: Measures a company's ability to service its debt with its operating income .</li>
+                        <li><strong>Earnings Quality</strong>: Number of unqualified audits—higher implies reliable financials.</li>
+                    </ul>
+                    <p class="text-muted small">Use these metrics to assess risk, financial transparency, and governance strength.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+     <!-- 📈 Correlation -->
+    <!-- 📈 Correlation -->
+    {% if correlation_result %}
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h4 class="card-title">Debt vs Reporting Quality</h4>
                     <p><strong>{{ correlation_method }} Correlation:</strong> {{ correlation_result.correlation }}</p>
                     <p><strong>p-value:</strong> {{ correlation_result.p_value }}</p>
-                    <p class="mt-2">{{ correlation_comment }}</p>
-                </div>
-
-                
-            <div class="col-md-12 mt-5">
-                <h3 class="text-center mb-3">Debt Ratio vs Audit Opinion Score</h3>
-                <div class="chart-container" style="position: relative; height: 100%; width: 100%;">
-                    <canvas id="scatterChart"></canvas>
+                    <div class="mt-3">
+                        <canvas id="scatterChart" height="150"></canvas>
+                    </div>
                 </div>
             </div>
-            </div>
-
         </div>
-        {% endif %}
-
-    </div>
-
-    
-    
-
-    <!-- Financial Data Table -->
-    <div class="table-responsive mt-4">
-        <table class="table table-bordered table-striped">
-            <thead class="table-primary">
-                <tr>
-                    <th>Company</th>
-                    <th>Date</th>
-                    <th>Revenue(USD)</th>
-                    <th>Debt Short (USD)</th>
-                    <th>Debt Long (USD)</th>
-                    <th>Debt Ratio</th>
-                    <th>Audit Opinion</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in financial_data %}
-                <tr>
-                    <td>{{ item.company_name }}</td>
-                    <td>{{ item.report_date }}</td>
-                    <td>{{ item.normalized_revenue|floatformat:2|default:"-" }}</td>
-                    <td>{{ item.normalized_debt_short_term|floatformat:2 }}</td>
-                    <td>{{ item.normalized_debt_long_term|floatformat:2 }}</td>
-                    <td>
-                        {% if item.debt_ratio %}
-                            {% if item.debt_ratio > 0.7 %}
-                                <span class="badge bg-danger">{{ item.debt_ratio|floatformat:2 }}</span>
-                            {% elif item.debt_ratio > 0.5 %}
-                                <span class="badge bg-warning text-dark">{{ item.debt_ratio|floatformat:2 }}</span>
-                            {% else %}
-                                <span class="badge bg-success">{{ item.debt_ratio|floatformat:2 }}</span>
-                            {% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    
-                    <td>
-                        {% if item.auditor_opinion == "unqualified" %}
-                            <span class="badge bg-success">Unqualified</span>
-                        {% elif item.auditor_opinion == "qualified" %}
-                            <span class="badge bg-warning text-dark">Qualified</span>
-                        {% elif item.auditor_opinion == "disclaimer" %}
-                            <span class="badge bg-secondary">Disclaimer</span>
-                        {% elif item.auditor_opinion == "adverse" %}
-                            <span class="badge bg-danger">Adverse</span>
-                        {% elif item.auditor_opinion == "Adverse Conclusion" %}
-                            <span class="badge bg-danger">Adverse Conclusion</span>
-                        {% else %}
-                            <span class="badge bg-dark">Unknown</span>
-                        {% endif %}
-                      </td>
-                      
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Debt Comparison Chart -->
-    <div class="row">
-        <div class="col-md-6 mt-5">
-            <h3 class="text-center mb-3">Short-Term vs Long-Term Debt</h3>
-            <div class="chart-container" style="position: relative; height: 100%; width: 100%;">
-                <canvas id="debtBarChart"></canvas>
-            </div>
-        </div>
-    
-       
-    
-        <div class="col-md-6 mt-5">
-            <h3 class="text-center mb-3">Audit Opinion Distribution</h3>
-            <div class="chart-container" style="position: relative; height: 100%; width: 100%;">
-                <canvas id="opinionChart"></canvas>
+        <div class="col-md-4">
+            <div class="card bg-light shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">📌 How to Interpret</h5>
+                    <p>
+                        This scatter chart illustrates the relationship between a company's debt ratio and the auditor’s opinion score.
+                    </p>
+                    <ul>
+                        <li><strong>Higher scores (3):</strong> indicate adverse or problematic audits.</li>
+                        <li><strong>Debt Ratio:</strong> Total debt divided by total assets.</li>
+                        <li><strong>Goal:</strong> Identify if financial stress relates to audit findings.</li>
+                    </ul>
+                    <p class="text-muted small">
+                        p-value < 0.05 means the relationship is statistically significant.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
-    
-    
-    
-  
-    
+    {% endif %}
+
+
+
+    <!-- Insert all chart + interpretation sections here (already shared above) -->
+    <article class="mb-5">
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="text-center mb-3">🔸 Audit Opinion Distribution</h5>
+                        <canvas id="opinionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100 bg-light">
+                    <div class="card-body">
+                        <h5 class="mb-3">📋 Understanding Opinions</h5>
+                        <p>This pie chart shows how often companies receive clean (unqualified) or problematic (qualified/adverse) audit opinions.</p>
+                        <p><strong>Insight:</strong> A high rate of adverse opinions suggests poor financial transparency or accounting practice issues.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- Chart Card -->
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="text-center mb-3">🔹 Short-Term vs Long-Term Debt</h5>
+                        <canvas id="debtBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Interpretation Card -->
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100 bg-light">
+                    <div class="card-body">
+                        <h5 class="mb-3">🧠 How to Interpret</h5>
+                        <p>This chart helps identify the structure of corporate debt. A higher proportion of short-term debt could imply liquidity risks, while more long-term debt could indicate higher interest expense but improved cash flow timing.</p>
+                        <p><strong>Use Case:</strong> Compare the financial strategy across companies or years.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="text-center mb-3">📈 Revenue & Net Profit Trends</h5>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100 bg-light">
+                    <div class="card-body">
+                        <h5 class="mb-3">🔍 What to Look For</h5>
+                        <p>Track company growth over the years. Positive profit trends signal operational strength, while a disconnect between revenue and profit may suggest cost inefficiencies.</p>
+                        <p><strong>Insight:</strong> Watch for downturns during high revenue years—it may signal rising debt or poor cost control.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="text-center mb-3">📉 Debt-to-Equity Ratio</h5>
+                        <canvas id="deRatioChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100 bg-light">
+                    <div class="card-body">
+                        <h5 class="mb-3">📊 What It Tells You</h5>
+                        <p>This ratio measures leverage. High values may indicate greater risk, while lower values show conservative financing.</p>
+                        <p><strong>Best Practice:</strong> Compare with industry averages for healthy benchmarking.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        
+        
+
+
+      </article>
+      
+    <!-- Footer -->
 </div>
-
 <div class="footer">
     <p>&copy; 2025 Debt Maturity Research. All rights reserved.</p>
 </div>
+
+
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -383,6 +413,121 @@
         }
     });
 </script>
+
+
+<script>
+    const trendData = JSON.parse('{{ trend_data_json|escapejs }}');
+
+const trendLabels = trendData.map(item => item.year);
+const revenueData = trendData.map(item => item.revenue || 0);
+const netProfitData = trendData.map(item => item.net_profit || 0);
+
+new Chart(document.getElementById("trendChart").getContext("2d"), {
+    type: "line",
+    data: {
+        labels: trendLabels,
+        datasets: [
+            {
+                label: "Revenue (USD)",
+                data: revenueData,
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                tension: 0.3,
+                fill: true
+            },
+            {
+                label: "Net Profit (USD)",
+                data: netProfitData,
+                borderColor: "rgba(255, 99, 132, 1)",
+                backgroundColor: "rgba(255, 99, 132, 0.2)",
+                tension: 0.3,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: "Revenue and Profit Trends by Year"
+            }
+        },
+        scales: {
+            y: {
+                title: {
+                    display: true,
+                    text: "Amount (USD)"
+                },
+                beginAtZero: true
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: "Year"
+                }
+            }
+        }
+    }
+});
+
+</script>
+
+<script>
+    const deData = JSON.parse('{{ de_ratio_data_json|escapejs }}');
+
+    const deLabels = deData.map(item => `${item.company_name} ${item.report_date}`);
+    const deValues = deData.map(item => item.de_ratio || 0);
+
+    new Chart(document.getElementById("deRatioChart").getContext("2d"), {
+        type: "bar",
+        data: {
+            labels: deLabels,
+            datasets: [{
+                label: "Debt-to-Equity Ratio",
+                data: deValues,
+                backgroundColor: deValues.map(val =>
+                    val > 2 ? 'rgba(220, 53, 69, 0.7)' : // red
+                    val > 1 ? 'rgba(255, 193, 7, 0.7)' : // yellow
+                             'rgba(40, 167, 69, 0.7)'    // green
+                ),
+                borderColor: 'rgba(0,0,0,0.1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: "Debt-to-Equity Ratio by Report"
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `Ratio: ${ctx.parsed.y}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "Debt ÷ Equity"
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: "Company & Date"
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+
 
 
 <script>
