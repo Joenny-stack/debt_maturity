@@ -12,6 +12,7 @@ def financials_view(request):
     selected_company = request.GET.get('company', None)
     selected_year = request.GET.get('year', None)
     opinion_filter = request.GET.get('opinion', None)
+    show_analysis = request.GET.get('show_analysis', False)
 
     # 2. Filtered queryset
     financial_data = FinancialData.objects.all().order_by('report_date')
@@ -144,7 +145,7 @@ def financials_view(request):
 
     # 6. Summary metrics
     total_debt = financial_data.aggregate(
-        total=Sum('debt_short_term') + Sum('debt_long_term')
+        total=Sum('normalized_debt_short_term') + Sum('normalized_debt_long_term')
     )['total'] or 0
     inflation_rate = "RBZ data needed"
     earnings_quality = financial_data.filter(auditor_opinion__iexact='unqualified').count()
@@ -156,7 +157,8 @@ def financials_view(request):
         "selected_company": selected_company,
         "selected_year": selected_year,
         "opinion_filter": opinion_filter,
-        "total_debt": f"{total_debt:,}",
+        "show_analysis": show_analysis,
+        "total_debt": f"{total_debt:,.2f}",  # Format with two decimal places
         "inflation_rate": inflation_rate,
         "earnings_quality": earnings_quality,
         "financial_data": financial_data,

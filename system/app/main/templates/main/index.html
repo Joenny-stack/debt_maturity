@@ -36,8 +36,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">About</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+               
             </ul>
         </div>
     </div>
@@ -46,11 +45,11 @@
     <h1 class="text-center mb-4">📊 Debt Maturity Analysis Dashboard</h1>
 
     <!-- Filters -->
-    <form method="get" class="row justify-content-center g-2 mb-4">
+    <form method="get" class="row justify-content-center g-2 mb-4 align-items-end">
         <!-- Company -->
         <div class="col-auto">
             <label for="company" class="form-label">Company</label>
-            <select name="company" id="company" class="form-select" onchange="this.form.submit()">
+            <select name="company" id="company" class="form-select" onchange="setShowAnalysisFalse()">
                 <option value="">All</option>
                 {% for company in companies %}
                     <option value="{{ company }}" {% if company == selected_company %}selected{% endif %}>{{ company }}</option>
@@ -60,73 +59,21 @@
         <!-- Year -->
         <div class="col-auto">
             <label for="year" class="form-label">Year</label>
-            <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+            <select name="year" id="year" class="form-select" onchange="setShowAnalysisFalse()">
                 <option value="">All</option>
                 {% for year in years %}
                     <option value="{{ year }}" {% if year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year }}</option>
                 {% endfor %}
             </select>
         </div>
-        <!-- Opinion -->
+        <!-- Show Analysis Button -->
         <div class="col-auto">
-            <label for="opinion" class="form-label">Opinion</label>
-            <select name="opinion" id="opinion" class="form-select" onchange="this.form.submit()">
-                <option value="">All</option>
-                <option value="problematic" {% if opinion_filter == "problematic" %}selected{% endif %}>Qualified / Adverse Only</option>
-            </select>
+            <button type="submit" name="show_analysis" value="true" class="btn btn-primary">Show Analysis</button>
         </div>
     </form>
 
-    <!-- 🔽 Collapsible Financial Metrics Table -->
-<div class="card shadow-sm mb-5">
-    <div class="card-body">
-        <h5 class="card-title">📋 Financial Metrics Summary</h5>
-        <button id="toggleTableBtn" class="btn btn-outline-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#metricsTable" aria-expanded="false" aria-controls="metricsTable">
-            Show Table
-        </button>
-        
-
-        <div class="collapse" id="metricsTable">
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered align-middle">
-                    <thead class="table-primary text-center">
-                        <tr>
-                            <th>Company</th>
-                            <th>Year</th>
-                            <th>Revenue (USD)</th>
-                            <th>Net Profit</th>
-                            <th>Short-Term Debt</th>
-                            <th>Long-Term Debt</th>
-                            <th>Total Assets</th>
-                            <th>Debt Ratio</th>
-                            <th>Audit Opinion</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in financial_data %}
-                        <tr class="text-center">
-                            <td>{{ row.company_name }}</td>
-                            <td>{{ row.report_date.year }}</td>
-                            <td>{{ row.normalized_revenue|floatformat:0 }}</td>
-                            <td>{{ row.net_profit|floatformat:0 }}</td>
-                            <td>{{ row.normalized_debt_short_term|floatformat:0 }}</td>
-                            <td>{{ row.normalized_debt_long_term|floatformat:0 }}</td>
-                            <td>{{ row.total_assets|floatformat:0 }}</td>
-                            <td>{{ row.debt_ratio|floatformat:2 }}</td>
-                            <td>{{ row.auditor_opinion|title }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 
     <!-- KPI Cards -->
-    <!-- 🧮 KPI Cards with Icons & Badges -->
     <div class="row g-3 mb-2">
         <!-- Reporting Quality -->
         <div class="col-md-4">
@@ -151,16 +98,14 @@
             </div>
         </div>
 
-
-
-        <!-- Inflation Rate -->
+        <!-- Total Debt -->
         <div class="col-md-4">
             <div class="card text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-balance-scale text-warning"></i> Debt Service Ratio</h5>
+                    <h5 class="card-title"><i class="fas fa-coins text-warning"></i> Total Debt (Normalized)</h5>
                     <p class="fs-4">
-                        {{ inflation_rate }}
-                        <span class="badge bg-secondary">📊 Source: RBZ</span>
+                        {{ total_debt }}
+                        <span class="badge bg-secondary">📊 Aggregated</span>
                     </p>
                 </div>
             </div>
@@ -180,26 +125,94 @@
         </div>
     </div>
 
-    <!-- ℹ️ Interpretation Panel -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card bg-light shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-info-circle"></i> How to Interpret These KPIs</h5>
-                    <ul class="mb-1">
-                        <li><strong>Reporting Quality</strong>: Based on audit scores. <em>Lower is better</em>.</li>
-                        <li><strong>Debt Service Ratio</strong>: Measures a company's ability to service its debt with its operating income .</li>
-                        <li><strong>Earnings Quality</strong>: Number of unqualified audits—higher implies reliable financials.</li>
-                    </ul>
-                    <p class="text-muted small">Use these metrics to assess risk, financial transparency, and governance strength.</p>
+        <!-- ℹ️ Interpretation Panel -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card bg-light shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-info-circle"></i> How to Interpret These KPIs</h5>
+                        <ul class="mb-1">
+                            <li><strong>Reporting Quality</strong>: Based on audit scores. <em>Lower is better</em>.</li>
+                            <li><strong>Total Debt</strong>: Shows total debt normalized to USD .</li>
+                            <li><strong>Earnings Quality</strong>: Number of unqualified audits—higher implies reliable financials.</li>
+                        </ul>
+                        <p class="text-muted small">Use these metrics to assess risk, financial transparency, and governance strength.</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
+    <!-- Conditional Content -->
+    {% if show_analysis %}
+        <!-- Financial Metrics Table -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-body">
+                <h5 class="card-title">📋 Financial Data Table</h5>
+                <button id="toggleTableBtn" class="btn btn-outline-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#metricsTable" aria-expanded="false" aria-controls="metricsTable">
+                    Show Table
+                </button>
 
-     <!-- 📈 Correlation -->
-    <!-- 📈 Correlation -->
+                <div class="collapse" id="metricsTable">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered align-middle">
+                                <thead class="table-primary text-center">
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Date</th>
+                                        <th>Revenue (USD)</th>
+                                        <th>Debt Short (USD)</th>
+                                        <th>Debt Long (USD)</th>
+                                        <th>Debt Ratio</th>
+                                        <th>Audit Opinion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in financial_data %}
+                                    <tr>
+                                        <td>{{ item.company_name }}</td>
+                                        <td>{{ item.report_date }}</td>
+                                        <td class="text-end">{{ item.normalized_revenue|floatformat:2|default:"-" }}</td>
+                                        <td class="text-end">{{ item.normalized_debt_short_term|floatformat:2 }}</td>
+                                        <td class="text-end">{{ item.normalized_debt_long_term|floatformat:2 }}</td>
+                                        <td class="text-center">
+                                            {% if item.debt_ratio %}
+                                                {% if item.debt_ratio > 0.7 %}
+                                                    <span class="badge bg-danger">{{ item.debt_ratio|floatformat:2 }}</span>
+                                                {% elif item.debt_ratio > 0.5 %}
+                                                    <span class="badge bg-warning text-dark">{{ item.debt_ratio|floatformat:2 }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">{{ item.debt_ratio|floatformat:2 }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if item.auditor_opinion == "unqualified" %}
+                                                <span class="badge bg-success">Unqualified</span>
+                                            {% elif item.auditor_opinion == "qualified" %}
+                                                <span class="badge bg-warning text-dark">Qualified</span>
+                                            {% elif item.auditor_opinion == "disclaimer" %}
+                                                <span class="badge bg-secondary">Disclaimer</span>
+                                            {% elif item.auditor_opinion == "adverse" %}
+                                                <span class="badge bg-danger">Adverse</span>
+                                            {% elif item.auditor_opinion == "Adverse Conclusion" %}
+                                                <span class="badge bg-danger">Adverse Conclusion</span>
+                                            {% else %}
+                                                <span class="badge bg-dark">Unknown</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📈 Correlation -->
     {% if correlation_result %}
     <div class="row mb-5">
         <div class="col-md-8">
@@ -237,107 +250,94 @@
 
 
 
-    <!-- Insert all chart + interpretation sections here (already shared above) -->
-    <article class="mb-5">
 
-        <div class="row g-4 mb-5">
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="text-center mb-3">🔸 Audit Opinion Distribution</h5>
-                        <canvas id="opinionChart"></canvas>
+        <!-- Charts and Analysis -->
+        <article class="mb-5">
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="text-center mb-3">🔸 Audit Opinion Distribution</h5>
+                            <canvas id="opinionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 bg-light">
+                        <div class="card-body">
+                            <h5 class="mb-3">📋 Understanding Opinions</h5>
+                            <p>This pie chart shows how often companies receive clean (unqualified) or problematic (qualified/adverse) audit opinions.</p>
+                            <p><strong>Insight:</strong> A high rate of adverse opinions suggests poor financial transparency or accounting practice issues.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100 bg-light">
-                    <div class="card-body">
-                        <h5 class="mb-3">📋 Understanding Opinions</h5>
-                        <p>This pie chart shows how often companies receive clean (unqualified) or problematic (qualified/adverse) audit opinions.</p>
-                        <p><strong>Insight:</strong> A high rate of adverse opinions suggests poor financial transparency or accounting practice issues.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="row g-4 mb-5">
-            <!-- Chart Card -->
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="text-center mb-3">🔹 Short-Term vs Long-Term Debt</h5>
-                        <canvas id="debtBarChart"></canvas>
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="text-center mb-3">🔹 Short-Term vs Long-Term Debt</h5>
+                            <canvas id="debtBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 bg-light">
+                        <div class="card-body">
+                            <h5 class="mb-3">🧠 How to Interpret</h5>
+                            <p>This chart helps identify the structure of corporate debt. A higher proportion of short-term debt could imply liquidity risks, while more long-term debt could indicate higher interest expense but improved cash flow timing.</p>
+                            <p><strong>Use Case:</strong> Compare the financial strategy across companies or years.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        
-            <!-- Interpretation Card -->
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100 bg-light">
-                    <div class="card-body">
-                        <h5 class="mb-3">🧠 How to Interpret</h5>
-                        <p>This chart helps identify the structure of corporate debt. A higher proportion of short-term debt could imply liquidity risks, while more long-term debt could indicate higher interest expense but improved cash flow timing.</p>
-                        <p><strong>Use Case:</strong> Compare the financial strategy across companies or years.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        
-        
-        <div class="row g-4 mb-5">
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="text-center mb-3">📈 Revenue & Net Profit Trends</h5>
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100 bg-light">
-                    <div class="card-body">
-                        <h5 class="mb-3">🔍 What to Look For</h5>
-                        <p>Track company growth over the years. Positive profit trends signal operational strength, while a disconnect between revenue and profit may suggest cost inefficiencies.</p>
-                        <p><strong>Insight:</strong> Watch for downturns during high revenue years—it may signal rising debt or poor cost control.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="row g-4 mb-5">
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="text-center mb-3">📉 Debt-to-Equity Ratio</h5>
-                        <canvas id="deRatioChart"></canvas>
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="text-center mb-3">📈 Revenue & Net Profit Trends</h5>
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 bg-light">
+                        <div class="card-body">
+                            <h5 class="mb-3">🔍 What to Look For</h5>
+                            <p>Track company growth over the years. Positive profit trends signal operational strength, while a disconnect between revenue and profit may suggest cost inefficiencies.</p>
+                            <p><strong>Insight:</strong> Watch for downturns during high revenue years—it may signal rising debt or poor cost control.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100 bg-light">
-                    <div class="card-body">
-                        <h5 class="mb-3">📊 What It Tells You</h5>
-                        <p>This ratio measures leverage. High values may indicate greater risk, while lower values show conservative financing.</p>
-                        <p><strong>Best Practice:</strong> Compare with industry averages for healthy benchmarking.</p>
+
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="text-center mb-3">📉 Debt-to-Equity Ratio</h5>
+                            <canvas id="deRatioChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 bg-light">
+                        <div class="card-body">
+                            <h5 class="mb-3">📊 What It Tells You</h5>
+                            <p>This ratio measures leverage. High values may indicate greater risk, while lower values show conservative financing.</p>
+                            <p><strong>Best Practice:</strong> Compare with industry averages for healthy benchmarking.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-
-        
-        
-
-
-      </article>
-      
-    <!-- Footer -->
+        </article>
+    {% endif %}
 </div>
 <div class="footer">
     <p>&copy; 2025 Debt Maturity Research. All rights reserved.</p>
 </div>
-
 
 <script>
     const toggleBtn = document.getElementById("toggleTableBtn");
@@ -352,13 +352,10 @@
     });
 </script>
 
-
-
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Chart Script -->
-
 <script>
     const debtData = JSON.parse('{{ debt_data_json|escapejs }}');
 
@@ -476,63 +473,61 @@
     });
 </script>
 
-
 <script>
     const trendData = JSON.parse('{{ trend_data_json|escapejs }}');
 
-const trendLabels = trendData.map(item => item.year);
-const revenueData = trendData.map(item => item.revenue || 0);
-const netProfitData = trendData.map(item => item.net_profit || 0);
+    const trendLabels = trendData.map(item => item.year);
+    const revenueData = trendData.map(item => item.revenue || 0);
+    const netProfitData = trendData.map(item => item.net_profit || 0);
 
-new Chart(document.getElementById("trendChart").getContext("2d"), {
-    type: "line",
-    data: {
-        labels: trendLabels,
-        datasets: [
-            {
-                label: "Revenue (USD)",
-                data: revenueData,
-                borderColor: "rgba(75, 192, 192, 1)",
-                backgroundColor: "rgba(75, 192, 192, 0.2)",
-                tension: 0.3,
-                fill: true
-            },
-            {
-                label: "Net Profit (USD)",
-                data: netProfitData,
-                borderColor: "rgba(255, 99, 132, 1)",
-                backgroundColor: "rgba(255, 99, 132, 0.2)",
-                tension: 0.3,
-                fill: true
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            title: {
-                display: true,
-                text: "Revenue and Profit Trends by Year"
-            }
-        },
-        scales: {
-            y: {
-                title: {
-                    display: true,
-                    text: "Amount (USD)"
+    new Chart(document.getElementById("trendChart").getContext("2d"), {
+        type: "line",
+        data: {
+            labels: trendLabels,
+            datasets: [
+                {
+                    label: "Revenue (USD)",
+                    data: revenueData,
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    tension: 0.3,
+                    fill: true
                 },
-                beginAtZero: true
-            },
-            x: {
+                {
+                    label: "Net Profit (USD)",
+                    data: netProfitData,
+                    borderColor: "rgba(255, 99, 132, 1)",
+                    backgroundColor: "rgba(255, 99, 132, 0.2)",
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
                 title: {
                     display: true,
-                    text: "Year"
+                    text: "Revenue and Profit Trends by Year"
+                }
+            },
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: "Amount (USD)"
+                    },
+                    beginAtZero: true
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: "Year"
+                    }
                 }
             }
         }
-    }
-});
-
+    });
 </script>
 
 <script>
@@ -589,9 +584,6 @@ new Chart(document.getElementById("trendChart").getContext("2d"), {
     });
 </script>
 
-
-
-
 <script>
     const opinionCounts = JSON.parse('{{ opinion_counts_json|escapejs }}');
     const opinionLabels = Object.keys(opinionCounts);
@@ -630,7 +622,6 @@ new Chart(document.getElementById("trendChart").getContext("2d"), {
         }
     });
 </script>
-
 
 </body>
 </html>
