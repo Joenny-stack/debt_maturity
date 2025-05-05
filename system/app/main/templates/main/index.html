@@ -16,6 +16,7 @@
             });
         });
     </script>
+
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; color: #333; }
         .navbar { background: #007bff; }
@@ -68,11 +69,17 @@
         </div>
         <!-- Show Analysis Button -->
         <div class="col-auto">
-            <button type="submit" name="show_analysis" value="true" class="btn btn-primary">Show Analysis</button>
+            <button type="submit" name="show_analysis" value="true" class="btn btn-primary" id="showAnalysisBtn">Show Analysis</button>
+        </div>
+        <div id="spinner" class="text-center my-3" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
         </div>
     </form>
 
-
+  
+  
     <!-- KPI Cards -->
     <div class="row g-3 mb-2">
         <!-- Reporting Quality -->
@@ -125,6 +132,8 @@
         </div>
     </div>
 
+    
+
         <!-- ℹ️ Interpretation Panel -->
         <div class="row mb-4">
             <div class="col-md-12">
@@ -142,8 +151,7 @@
             </div>
         </div>
 
-    <!-- Conditional Content -->
-    {% if show_analysis %}
+     {% if show_analysis %}
         <!-- Financial Metrics Table -->
         <div class="card shadow-sm mb-5">
             <div class="card-body">
@@ -151,7 +159,11 @@
                 <button id="toggleTableBtn" class="btn btn-outline-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#metricsTable" aria-expanded="false" aria-controls="metricsTable">
                     Show Table
                 </button>
-
+                <div id="spinner" class="text-center my-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
                 <div class="collapse" id="metricsTable">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-bordered align-middle">
@@ -342,6 +354,18 @@
 <script>
     const toggleBtn = document.getElementById("toggleTableBtn");
     const tableCollapse = document.getElementById("metricsTable");
+    const spinner = document.getElementById("spinner");
+
+    toggleBtn.addEventListener("click", (event) => {
+        if (!tableCollapse.classList.contains("show")) {
+            event.preventDefault();
+            spinner.style.display = "block";
+            setTimeout(() => {
+                spinner.style.display = "none";
+                tableCollapse.classList.add("show");
+            }, 5000);
+        }
+    });
 
     tableCollapse.addEventListener("shown.bs.collapse", () => {
         toggleBtn.textContent = "Hide Table";
@@ -349,6 +373,12 @@
 
     tableCollapse.addEventListener("hidden.bs.collapse", () => {
         toggleBtn.textContent = "Show Table";
+    });
+
+    const showAnalysisBtn = document.getElementById("showAnalysisBtn");
+
+    showAnalysisBtn.addEventListener("click", () => {
+        spinner.style.display = "block";
     });
 </script>
 
